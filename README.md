@@ -1,7 +1,7 @@
 ### JDG 7.1 Compat Mode sample
 
 This project demonstrate interoperability between Rest, Hot Rod and Memcached endpoints
-for JDG 9.1.
+for JDG 7.1.
 
 #### Preparing the server
 
