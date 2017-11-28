@@ -31,9 +31,6 @@
                 </executions>
                 <configuration>
                     <mainClass>org.infinispan.TestCompat</mainClass>
-                    <arguments>
-                        <argument>-ea</argument>
-                    </arguments>
                 </configuration>
             </plugin>
         </plugins>

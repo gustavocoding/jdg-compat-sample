@@ -58,7 +58,7 @@ public class TestCompat {
       return HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
    }
 
-   private static RemoteCache<Object, Object> createHotRodClient() {
+   private static RemoteCache<String, byte[]> createHotRodClient() {
       RemoteCacheManager remoteCacheManager = new RemoteCacheManager();
       return remoteCacheManager.getCache(CACHE_NAME);
    }
@@ -73,7 +73,7 @@ public class TestCompat {
       return true;
    }
 
-   private static Object getWithRest(CloseableHttpClient restClient, String key) throws IOException {
+   private static byte[] getWithRest(CloseableHttpClient restClient, String key) throws IOException {
       HttpGet get = new HttpGet(REST_URL + "/" + key);
 
       HttpResponse getResponse = restClient.execute(get);
@@ -88,15 +88,15 @@ public class TestCompat {
       verify(200 == putResponse.getStatusLine().getStatusCode());
    }
 
-   private static Object getWithMemCached(MemcachedClient memcachedClient, String key) throws IOException, ClassNotFoundException {
-      return memcachedClient.get(key, MEMCACHED_TRANSCODER);
+   private static byte[] getWithMemCached(MemcachedClient memcachedClient, String key) throws IOException, ClassNotFoundException {
+      return (byte[])memcachedClient.get(key, MEMCACHED_TRANSCODER);
    }
 
    private static void putWithMemCached(MemcachedClient memcachedClient, String key, byte[] value) throws IOException, ClassNotFoundException {
       memcachedClient.set(key, MEMCACHED_EXPIRATION, value, MEMCACHED_TRANSCODER);
    }
 
-   private static Object getWithHotRodClient(RemoteCache hotRodClient, String key) throws IOException, ClassNotFoundException {
+   private static byte[] getWithHotRodClient(RemoteCache<String,byte[]> hotRodClient, String key) throws IOException, ClassNotFoundException {
       return hotRodClient.get(key);
    }
 
@@ -108,7 +108,7 @@ public class TestCompat {
    }
 
    public static void main(String[] args) throws IOException, ClassNotFoundException {
-      RemoteCache<Object, Object> hotRodClient = createHotRodClient();
+      RemoteCache<String, byte[]> hotRodClient = createHotRodClient();
       CloseableHttpClient httpClient = createRestClient();
       MemcachedClient memcachedClient = createMemcachedClient();
 
@@ -125,15 +125,15 @@ public class TestCompat {
        * Writing via Hot Rod first, and reading from Rest and Memcached
        */
       hotRodClient.put(key1, value1);
-      verify(areArraysEquals((byte[]) hotRodClient.get(key1), value1));
+      verify(areArraysEquals(hotRodClient.get(key1), value1));
 
       // Read with Rest
-      Object valueFromRest = getWithRest(httpClient, key1);
-      verify(areArraysEquals((byte[]) valueFromRest, value1));
+      byte[] valueFromRest = getWithRest(httpClient, key1);
+      verify(areArraysEquals(valueFromRest, value1));
 
       // Read with Memcached
-      Object fromMemcached = getWithMemCached(memcachedClient, key1);
-      verify(areArraysEquals((byte[]) fromMemcached, value1));
+      byte[] fromMemcached = getWithMemCached(memcachedClient, key1);
+      verify(areArraysEquals(fromMemcached, value1));
 
 
 
@@ -141,16 +141,16 @@ public class TestCompat {
        * Writing via REST first, reading via HR and memcached
        */
       putWithRest(httpClient, key2, value2);
-      Object fromRest = getWithRest(httpClient, key2);
-      verify(areArraysEquals((byte[]) fromRest, value2));
+      byte[] fromRest = getWithRest(httpClient, key2);
+      verify(areArraysEquals(fromRest, value2));
 
       // Read with Hot Rod
-      Object fromHotRod = getWithHotRodClient(hotRodClient, key2);
-      verify(areArraysEquals((byte[]) fromHotRod, value2));
+      byte[] fromHotRod = getWithHotRodClient(hotRodClient, key2);
+      verify(areArraysEquals(fromHotRod, value2));
 
       // Read with Memcached
       fromMemcached = getWithMemCached(memcachedClient, key2);
-      verify(areArraysEquals((byte[]) fromMemcached, value2));
+      verify(areArraysEquals(fromMemcached, value2));
 
 
       /*
@@ -160,11 +160,11 @@ public class TestCompat {
 
       // Read with Hot Rod
       fromHotRod = getWithHotRodClient(hotRodClient, key3);
-      verify(areArraysEquals((byte[]) fromHotRod, value3));
+      verify(areArraysEquals(fromHotRod, value3));
 
       // Read with Rest
       valueFromRest = getWithRest(httpClient, key3);
-      verify(areArraysEquals((byte[]) valueFromRest, value3));
+      verify(areArraysEquals(valueFromRest, value3));
 
       memcachedClient.shutdown();
       hotRodClient.getRemoteCacheManager().stop();
